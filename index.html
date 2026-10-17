@@ -593,7 +593,12 @@ ${dayExtra(P)}
  $('#dpick').onchange=e=>{const v=e.target.value.split('-').map(Number);if(v[0]>=2026&&v[0]<=2030){ST.sel=v;render();}};
  $('#spk').onclick=()=>speak(`${d} ${GM[m-1]} ${y}, ${WD[P.wd]}. శ్రీ ${P.samv} నామ సంవత్సరం, ${P.masa}, ${P.paksha}. తిథి ${tn(P.tith[0].idx)}. నక్షత్రం ${NAK[P.nak[0].idx]}. ${fs.length?'ఈ రోజు '+fs.map(f=>f.name).join(', ')+'. ':''}సూర్యోదయం ${fmtT(P.rise)}. రాహు కాలం ${rng(P.rahu)}. యమగండం ${rng(P.yama)}. ${P.amrit.length?'అమృత ఘడియలు '+fmtT(P.amrit[0][0])+' నుండి. ':''}`);}
 function fmtD(jd){const p=istParts(jd);return p.d+' '+GM[p.m-1]+' '+p.y;}
-function speak(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='te-IN';const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.startsWith('te'));if(v)u.voice=v;u.rate=0.9;speechSynthesis.speak(u);}catch(e){alert('ఈ బ్రౌజర్‌లో వాయిస్ సపోర్ట్ లేదు');}}
+let SPK=false;
+function spkBtn(){const b=$('#spk');if(b){b.textContent=SPK?'⏹️ ఆపండి':'🔊 వినండి';b.style.background=SPK?'var(--bad)':'';b.style.color=SPK?'#fff':'';}}
+function stopSpeak(){try{speechSynthesis.cancel();}catch(e){}SPK=false;spkBtn();}
+function speak(t){if(SPK){stopSpeak();return;}try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='te-IN';const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.startsWith('te'));if(v)u.voice=v;u.rate=0.9;
+ u.onend=u.onerror=()=>{SPK=false;spkBtn();};SPK=true;spkBtn();speechSynthesis.speak(u);}catch(e){SPK=false;spkBtn();alert('ఈ బ్రౌజర్‌లో వాయిస్ సపోర్ట్ లేదు');}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopSpeak();});
 function calMove(n){let [y,m]=ST.cal;m+=n;if(m<1){m=12;y--;}if(m>12){m=1;y++;}if(y<2026||y>2030)return;ST.cal=[y,m];render();}
 function renderCal(){const [y,m]=ST.cal;const YD=yearData(y);const fw=wday(y,m,1),nd=new Date(Date.UTC(y,m,0)).getUTCDate();
  const mis=new Set();for(let d=1;d<=nd;d++){const x=YD.byIdx[dkey(y,m,d)];mis.add((MON[x.mi].adhika?'అధిక ':'')+MASA[MON[x.mi].n]);}
@@ -623,7 +628,7 @@ function renderKarthe(){const YD=yearData(ST.ky);const nowJ=Date.now()/86400000+
   h+=`<div class="ka${cur?' cur':''}"><div class="h"><b>${KARTHE[k.idx][0]} కార్తె${cur?'<span class="tag">ప్రస్తుతం</span>':''}</b><span class="dts">${fmtD(k.start)} → ${fmtD(k.end)} (${days} రోజులు)</span></div>
   <div class="dts">ప్రవేశ సమయం: ${fmtT(k.start)}</div><p>${KARTHE[k.idx][1]}</p></div>`;});
  $('#s-karthe').innerHTML=h;$('#ky').onchange=e=>{ST.ky=+e.target.value;renderKarthe();};}
-function render(){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===ST.tab));
+function render(){if(SPK)stopSpeak();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===ST.tab));
  ['day','cal','fest','karthe','jat','match','muh','yr'].forEach(t=>$('#s-'+t).classList.toggle('hide',t!==ST.tab));
  if(ST.tab==='day')renderDay();else if(ST.tab==='cal'){renderCal();}else if(ST.tab==='fest')renderFest();else if(ST.tab==='karthe')renderKarthe();else if(ST.tab==='jat')renderJat();else if(ST.tab==='match')renderMatch();else if(ST.tab==='muh')renderMuh();else renderYr();}
 // ---------- JATAKAM UI ----------
